@@ -1,0 +1,406 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/iron-list/iron-list.html">
+<link rel="import" href="../../bower_components/iron-scroll-threshold/iron-scroll-threshold.html">
+<link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../../bower_components/iron-media-query/iron-media-query.html">
+<link rel="import" href="view-count.html">
+
+
+<dom-module id="show-list-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+        max-width: 800px;
+        margin: auto;
+      }
+      app-drawer {
+        white-space: nowrap;
+        margin-left: 56px;
+        --app-drawer-width: 200px;
+        --app-drawer-content-container: {
+          background-color: transparent;
+        }
+      }
+      .grid-item {
+        width: 50%;
+        height: 40vh;
+      }
+      .grid-item > a {
+        margin: 10px;
+        width: calc(100% - 20px);
+        height: calc(100% - 20px);
+        background-color: #f1f1f1;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center center;
+        display: flex;
+        align-items: flex-end;
+        text-decoration: none;
+      }
+      .title {
+        font-size: 15px;
+        color: black;
+        text-align: center;
+        padding: 5px;
+        background-color: white;
+        width: 100%;
+      }
+      .count {
+        font-size: 15px;
+        color: white;
+        text-align: center;
+        padding: 5px;
+        background-color: transparent;
+        width: 50%;
+      }
+      .loading-indicator {
+        font-size: 15px;
+        line-height: 120px;
+        color: #808080;
+        font-weight: 100;
+        text-align: center;
+        opacity: 1;
+      }
+      .loading-indicator[off] {
+        opacity: 0;
+      }
+      .nav {
+        padding-top: 100px;
+        text-align: right;
+        list-style: none;
+        padding-right: 20px;
+        height: 100%;
+      }
+      .nav a {
+        color: #000000;
+        text-decoration: none;
+        font-weight: 300;
+        line-height: 32px;
+        font-size: 14px;
+        display: inline-block;
+        transform-origin: right center;
+        transition: transform 0.2s;
+      }
+      .nav a:hover {
+        color: #dfdfdf;
+        transform: scale3d(1.2, 1.2, 1);
+      }
+      .active a {
+        color: #000000;
+        font-weight: bold;
+      }
+      .nav h2 {
+        color: white;
+        font-weight: 100;
+        font-size: 12px;
+        letter-spacing: 5px;
+        text-transform: uppercase;
+        margin: 32px 0;
+        color: #767676;
+      }
+      #list {
+        min-height: 100vh;
+      }
+      @media (max-width: 640px) {
+        .grid-item {
+          width: 100%;
+          height: 40vh;
+        }
+      }
+      @media (max-width: 1280px) {
+        app-drawer {
+          margin-left: 0;
+          z-index: 1;
+        }
+        .nav {
+          background-color: white;
+        }
+      }
+      /*UCyWqModMQlbIo8274Wh_ZsQ*/
+      /*https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=UCKRBA9XfgzAtJodE4t8cUeg&order=[[show.order]]&type=video&maxResults=10&pageToken=[[pageToken]]&[[_getDate(show.pb,'publishedBefore=')]]&[[_getDate(show.pa,'publishedAfter=')]]&key=AIzaSyA053VCd78p0v2Pica01W_ljGUSAfzl0vA*/
+    </style>
+    <iron-ajax
+        auto
+        url="https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=[[show.channel]]&order=[[order]]&type=video&maxResults=5&pageToken=[[pageToken]]&[[_getDate(show.pb,'publishedBefore=')]]&[[_getDate(show.pa,'publishedAfter=')]]&key=AIzaSyA053VCd78p0v2Pica01W_ljGUSAfzl0vA"
+        handle-as="json"
+        on-response="_onXhrResponse"></iron-ajax>
+    <app-drawer
+        opened="{{openedDrawer}}"
+        persistent="[[persistentDrawer]]">
+      <ul class="nav" role="navigation">
+        <h2>Video</h2>
+        <iron-selector selected="[[show.subroute]]" attr-for-selected="name" selected-class="active">
+          <template is="dom-repeat" items="[[shows]]" as="show">
+            <li name="[[show.subroute]]"><a href="/shows/[[show.subroute]]">[[show.name]]</a></li>
+          </template>
+        </iron-selector>
+        <h2>Trier par</h2>
+        <iron-selector selected="Date de sortie" attr-for-selected="name" selected-class="active" on-selected-changed="_onOrderChanged">
+          <template is="dom-repeat" items="[[settings]]" as="setting">
+            <li name="[[setting.name]]"><a>[[setting.name]]</a></li>
+          </template>
+        </iron-selector>
+      </ul>
+    </app-drawer>
+
+    <iron-media-query
+    query="max-width: 1280px"
+    query-matches="{{smallScreen}}"></iron-media-query>
+    <iron-list id="list" scroll-target="document" items="[[items]]" grid> 
+      <template>
+        <div class="grid-item">  
+          <a href="/video/[[item.id.videoId]]" style$="background-image:url([[item.snippet.thumbnails.high.url]]);">
+          <div class="title">[[item.snippet.title]]</div>
+          <div class="count">
+            <view-count id=[[item.id.videoId]]></view-count>
+          </div>
+          </a>
+        </div>
+      </template>
+    </iron-list>
+
+    <iron-scroll-threshold
+    id="scrollThreshold"
+    scroll-target="document"
+    lower-threshold="0"
+    on-lower-threshold="_onLowerThreshold"></iron-scroll-threshold>
+
+    <div class="loading-indicator" off$="[[lastPage]]">More videos to come...</div> 
+
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'show-list-page',
+
+      properties: {
+        /* whether the user is on a small screen device*/
+        
+        /* whether the drawer is opened or not */
+        openedDrawer: {
+          type: Boolean,
+          value: true
+        },
+        /* whether the drawer is always visible */
+        persistentDrawer: {
+          type: Boolean,
+          value: true
+         },
+        // channel : {
+        //   type: String,
+        //   value : 'UCyWqModMQlbIo8274Wh_ZsQ',
+        //   observer : '_onChannelChanged'
+        // },
+        /* the list of shows */
+        shows: {
+          type: Array,
+          value: function() {
+             return [
+               // { name: 'All time', channel: 'UCyWqModMQlbIo8274Wh_ZsQ', subroute: 'all', q: '', order: 'viewCount', pb: 'now' , pa: ''}
+               // { name: 'Most Viewed 2017', subroute: 'mv2017', q: '', order: 'viewCount',  pb: 'now', pa: '2017-01-01T00:00:00Z' },
+               // { name: 'Most Viewed 2016', subroute: 'mv2016', q: '', order: 'viewCount',  pb: '2016-12-31T00:00:00Z', pa: '2016-01-01T00:00:00Z'},
+               // { name: 'Most Viewed 2015', subroute: 'mv2015', q: '', order: 'viewCount',  pb: '2015-12-31T00:00:00Z', pa: '2015-01-01T00:00:00Z'},
+              //  { name: 'Yeah1 Music', subroute: 'Music', q: '', order: 'date', channel : 'UCI2OiZs5aVcyBUBVsgovzng' ,pb: 'now' , pa: ''},
+              //  { name: 'VTV Movies', subroute: 'Movies', q: '', order: 'date', channel : 'UC_Ilt3C_XQspoSKl7rntxzA' ,pb: 'now' , pa: ''},
+                  { name: 'Cyprien', subroute: 'Cyprien', q: '', order: 'date', channel : 'UCyWqModMQlbIo8274Wh_ZsQ' ,pb: 'now' , pa: ''},
+                  { name: 'Norman', subroute: 'Norman', q: '', order:'date', channel : 'UCww2zZWg4Cf5xcRKG-ThmXQ' ,pb: 'now' , pa: ''}
+              //  { name: '5S', subroute: '5S', q: '', order: 'date', channel : 'UCs_zf9EwhzmXsLl51Mj7TIA' ,pb: 'now' , pa: ''},
+              // { name: 'Les show jaune', subroute: 'jaune', q: '', order: 'date', channel : 'UCYD22MFqaNqXp-ogTMosW_A' ,pb: 'now' , pa: ''}              
+             ];
+          }
+        },
+        settings: {
+          type: Array,
+          value: function() {
+             return [
+                  { name: 'Pertinence',order: 'rating', pb: 'now' , pa: ''},  
+                  { name: 'Date de sortie' , order: 'date', pb: 'now' , pa: ''},
+                  { name: 'Nombre de Vues',order: 'viewCount', pb: 'now' , pa: ''}
+
+                      
+             ];
+          }
+        },
+       
+        subroute: Object,
+        show: {
+          type: Object,
+          computed: '_getActiveShow(shows, subroute)',
+          observer: '_showDidChange'
+        },
+        order: {
+          type : String,
+          value : 'date',
+          notify: true,
+          observer : '_settingDidChange' 
+        },
+        // setting : {
+        //   type: Object,
+        //   computed: '_getSetting(settings, order)',
+        //   observer: '_settingDidChange'
+        // },
+        active: Boolean,
+        smallScreen: Boolean,
+
+        items: {
+          type: Array,
+          value: function() {
+            return [];
+          }
+        },
+        nextPageToken: String,
+        pageToken: {
+          type: String,
+          value: ''
+        },
+        lastPage: Boolean,
+        currentShow: String,
+      },
+      observers: [
+        '_updateToolbar(active, smallScreen)'
+      ],
+      ready : function(){
+        // console.log(this.channel);
+      },
+       _updateToolbar: function(active, smallScreen) {
+        if (active) {
+          this.fire('setup-toolbar', {
+            leftItemIcon: smallScreen ? 'menu' : '',
+            leftItemClickAction: function() { this.openedDrawer = true; }.bind(this)
+          });
+        }
+        this.persistentDrawer = !smallScreen;
+        this.openedDrawer = !smallScreen;
+      },
+
+      _getActiveShow: function(shows, subroute) {
+         var key = subroute.path ? subroute.path.substr(1) : 'Cyprien';
+         var res = shows.filter(function(show) { return show.subroute == key; });
+         return res[0] ? res[0] : shows[0];
+      },
+     
+      _onOrderChanged : function(val,detail){
+       
+        //console.log(detail.value);
+        var res = this.settings.filter(function(setting) { return setting.name == detail.value; });
+        // if(res[0]!= undefined)
+        // {
+          this.set('order',res[0].order);
+        //}
+        // this.set('order',detail.value);
+      },
+      _settingDidChange : function(newVal,oldVal)
+      {
+        this.set('items', []);
+        this.pageToken = '';
+        this.lastPage = false;
+        this.openedDrawer = this.persistentDrawer;
+      },
+      _showDidChange: function() {
+        this.pageToken = '';
+        this.lastPage = false;
+        this.openedDrawer = this.persistentDrawer;
+        this.fire('show-changed', this.show.subroute);
+      },
+      _updateToolbar: function(active, smallScreen) {
+       // console.log("active toolbar");
+        if (active) {
+          this.fire('setup-toolbar', {
+            leftItemIcon: smallScreen ? 'menu' : '',
+            leftItemClickAction: function() { this.openedDrawer = true; }.bind(this)
+          });
+        }
+        this.persistentDrawer = !smallScreen;
+        this.openedDrawer = !smallScreen;
+      },
+      _onXhrResponse: function(e) {
+        var response = e.detail.response;
+       // console.log(response);
+      //  var pageToken = response.nextPageToken;
+        // if(this.showchanged)
+        // {
+        //   this.set('items',[]);
+        //   this.set('showchanged',false);
+        //   this.pageToken = '';
+        //  // this.nextPageToken = pageToken;
+        // }
+        //console.log('load'+ response);
+        var items = response.items;
+        if (items.length === 0) {
+          this.lastPage = true;
+        } else {
+          if (this.currentShow != this.show) {
+            this.set('items', []);
+          }
+          this.totalResults = response.pageInfo.totalResults;
+          //console.log(this.totalResults);
+          if (!response.nextPageToken) {
+            this.lastPage = true;
+          } else {
+
+            this.nextPageToken = response.nextPageToken;
+            //console.log(this.nextPageToken);
+          }
+          this.currentShow = this.show;
+          items.forEach(function(item) {
+            this.push('items', item);
+          }, this);
+        }
+        this.$.scrollThreshold.clearTriggers();
+      },
+      _onLowerThreshold: function() {
+        this.pageToken = this.nextPageToken;
+      },
+
+
+      _pad : function(n){
+        return n<10 ? '0'+n : n ;
+      },
+      _ISODateString : function(d){
+        return d.getUTCFullYear()+'-'
+        + this._pad(d.getUTCMonth()+1)+'-'
+        + this._pad(d.getUTCDate())+'T'
+        + this._pad(d.getUTCHours())+':'
+        + this._pad(d.getUTCMinutes())+':'
+        + this._pad(d.getUTCSeconds())+'Z';
+      },
+      _getDate : function(date,time){
+        if(date=='now')
+        {
+          var d = new Date();
+          return time+this._ISODateString(d);
+        }
+        else if(date=='')
+        {
+          return '';
+        }
+        else
+        {
+          return time+date;
+        }
+      },
+      _getChannel: function(channel){
+        if(channel != '')
+        {
+          return '&channelId='+channel;
+        }
+      }
+
+
+    });
+  </script>
+</dom-module>

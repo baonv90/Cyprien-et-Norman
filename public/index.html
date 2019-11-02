@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>Cyprien et Norman</title>
+    <meta name="description" content="Chrome Developer Channel description">
+
+    <!-- See https://goo.gl/OOhYW5 -->
+    <link rel="manifest" href="/manifest.json">
+
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="src/show-app/show-app.html">
+    <style>
+      body {
+        margin: 0;
+        background-color: #f1f1f1;
+        background-image: linear-gradient(to bottom, #f1f1f1 0%, white 50%, #f1f1f1 100%);
+        background-attachment: fixed;
+        font-family: 'Roboto', 'Noto', sans-serif;
+      }
+    </style>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/service-worker.js');
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <show-app></show-app>
+  </body>
+</html>

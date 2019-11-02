@@ -1,0 +1,53 @@
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="view-count">
+  <template>
+    <style>
+      
+    </style>
+      <iron-ajax
+          auto
+          url="https://www.googleapis.com/youtube/v3/videos?part=statistics&id=[[id]]&key=AIzaSyA053VCd78p0v2Pica01W_ljGUSAfzl0vA"
+          handle-as="json"
+          last-response={{view}}
+      ></iron-ajax>
+      <span>[[_getViewCount(view)]]</span>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'view-count',
+
+      properties: {
+         id : String,
+         view : Object
+      },
+
+      _getViewCount : function(view){
+        var views = view.items[0].statistics.viewCount;
+        if(views >= 1000000000)
+        {
+          views = (views/1000000000).toFixed(2);
+          return views + "B";
+        }
+        else if(views >= 1000000)
+        {
+          views = (views/1000000).toFixed(2);
+          return views + "M";
+        }
+        else if(views >= 1000)
+        {
+          views = (views/1000).toFixed(2);
+          return views + "K";
+        }
+        else
+        {
+          return views;
+        }
+      }
+
+
+    });
+  </script>
+</dom-module>

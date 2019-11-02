@@ -1,0 +1,203 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../../bower_components/app-route/app-location.html">
+<link rel="import" href="../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+
+
+<link rel="import" href="show-icons.html">
+<link rel="import" href="show-list-page.html">
+<link rel="import" href="show-video-page.html">
+
+<dom-module id="show-app">
+  <template>
+    <style>
+      :host {
+        --paper-icon-button-ink-color: white;
+        display: block;
+        padding-top: 64px;
+      }
+      app-header {
+        @apply(--layout-fixed-top);
+        z-index: 1;
+        height: 64px;
+        line-height: 64px;
+        background-color: #e62117;
+        border-bottom: 1px solid #222;
+        -webkit-backdrop-filter: saturate(180%) blur(20px);
+      }
+      a {
+        @apply(--layout-flex-auto);
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        @apply(--layout-center-justified);
+        text-decoration: none;
+        color: white;
+        margin-right: 40px;
+      }
+      a:hover {
+        color: #ddd;
+      }
+      .title {
+        font-size: 14px;
+        margin: 0;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: 100;
+        letter-spacing: 5px;
+        word-spacing: 7px;
+        display: inline;
+        margin-left: 20px;
+        margin-right: 20px;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+      }
+      #name{
+        height: 60px;
+        width: 100%;
+      }
+      paper-button{
+        background: white;
+        border: 1px solid black;
+        color: black;
+        border-radius: 5px;
+        position: absolute;
+        top: 10px;
+        height: 40px;
+        transform: all 200ms ease-in ;
+      }
+      .cyprien {
+        right: calc(50% + 20px);
+      }
+      .selected {
+        color: white;
+        background: lightgray;
+        border: none;
+        
+      }
+      .norman {
+        left: calc(50% + 20px);
+      }
+      #leftItem {
+        min-width: 40px;
+        color: white;
+      }
+     /* #leftItem:not([icon]) {
+        visibility: hidden;
+      }
+      [threshold-triggered] .title {
+        opacity: 0;
+      }*/
+      @media (max-width: 640px) {
+        .title {
+          font-size: 10px;
+        }
+      }
+
+    </style>
+    <!-- app - route -->
+    <app-location route="{{route}}"></app-location>
+    <app-route
+        route="{{route}}"
+        pattern="/:page"
+        data="{{routeData}}"
+        tail="{{subroute}}">
+    </app-route>
+
+    <!-- app - header -->
+    <app-header fixed threshold="1">
+      <app-toolbar>
+        <paper-icon-button id="leftItem"></paper-icon-button>
+        <a href="/show/{{channel}}">
+          <h1 class="title">
+            <paper-button id='cyp' class='cyprien' on-tap="_onClickCyprien">Cyprien</paper-button>
+              VS
+            <paper-button id='nor' class='norman selected' on-tap="_onClickNorman">Norman</paper-button>
+          </h1>
+        </a>
+      </app-toolbar>
+    </app-header>
+      
+   
+    <iron-pages id="pages"
+        role="main"
+        selected="[[routeData.page]]"
+        selected-attribute="active"
+        attr-for-selected="name"
+        fallback-selection="show">
+      <show-list-page name="show"  
+          subroute="[[subroute]]"></show-list-page>
+      <show-video-page name="video"   
+          subroute="[[subroute]]"></show-video-page>
+    </iron-pages>
+
+
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'show-app',
+      listeners: {
+        'setup-toolbar': '_setupToolbar',
+        'show-changed': '_onShowChanged'
+      },
+      propreties :{
+        channel : {
+          type : String,
+          value: 'Cyprien',
+          notify: true,
+          observer : '_onChannelChanged'
+        }
+      },
+      _onClickCyprien : function(){
+        this.$.cyp.classList.remove('selected');
+        this.$.nor.classList.add('selected');
+        this.set('channel','Cyprien');
+        //this.set('channel','UCyWqModMQlbIo8274Wh_ZsQ');
+      },
+      _onClickNorman : function(){
+        this.$.cyp.classList.add('selected');
+        this.$.nor.classList.remove('selected');
+        this.set('channel','Norman');
+        //this.set('channel','UCww2zZWg4Cf5xcRKG-ThmXQ');
+      },
+      _onShowChanged : function(e,detail)
+      {
+        console.log(detail);
+        if(detail == 'Cyprien')
+        {
+          this.$.cyp.classList.remove('selected');
+          this.$.nor.classList.add('selected');
+        }
+        else
+        {
+          this.$.cyp.classList.add('selected');
+          this.$.nor.classList.remove('selected');
+        }
+      },
+      _setupToolbar: function(e) {
+        this.$.leftItem.onclick = e.detail.leftItemClickAction;
+        if (e.detail.leftItemIcon) {
+          this.$.leftItem.setAttribute('icon', e.detail.leftItemIcon);
+        } else {
+          this.$.leftItem.removeAttribute('icon');
+        }
+      }
+
+    });
+  </script>
+</dom-module>
